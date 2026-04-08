@@ -1,0 +1,18 @@
+[
+  {
+    "key": "cmd+shift+p",
+    "command": "-workbench.action.showCommands"
+  },
+  {
+    "key": "shift+cmd+p",
+    "command": "-workbench.action.showCommands"
+  },
+  {
+    "key": "ctrl+alt+c",
+    "command": "continue.focusContinueInput"
+  },
+  {
+    "key": "cmd+alt+c",
+    "command": "continue.focusContinueInput"
+  }
+]

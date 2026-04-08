@@ -1,0 +1,10 @@
+#!/bin/sh
+# Run candidate's shell inside mise exec so tools (node, python, go) are on PATH.
+# Tools list is read from /home/candidate/.mise-default-tools (written at image build time).
+TOOLS_FILE="/home/candidate/.mise-default-tools"
+if [ -s "$TOOLS_FILE" ]; then
+  TOOLS="$(cat "$TOOLS_FILE" | tr -d '\n\r')"
+  exec /usr/sbin/runuser -u candidate -- /bin/bash -c "export PATH=/home/candidate/.local/bin:\$PATH; exec /home/candidate/.local/bin/mise exec $TOOLS -- /bin/bash -i" _
+else
+  exec /usr/sbin/runuser -u candidate -- /bin/bash -i
+fi

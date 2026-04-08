@@ -1,0 +1,98 @@
+# Ubuntu base image
+FROM ubuntu:24.04
+
+ENV DEBIAN_FRONTEND=noninteractive
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    acl \
+    ca-certificates \
+    curl \
+    util-linux \
+    zstd \
+    libatomic1 \
+    rclone \
+    && chmod 700 /usr/bin/rclone \
+    && chown root:root /usr/bin/rclone \
+    && rm -rf /var/lib/apt/lists/*
+
+# Get Node version from code-server, install mise, then run code-server install script with that node
+WORKDIR /.angry_newton
+RUN curl -fsSL https://raw.githubusercontent.com/coder/code-server/refs/heads/main/.node-version -o .node-version || true && \
+    test -s .node-version || echo "22" > .node-version && \
+    curl -fsSL https://mise.run | sh && \
+    export PATH="/root/.local/bin:${PATH}" && \
+    /root/.local/bin/mise install node@$(cat .node-version | tr -d ' \n\r') && \
+    /root/.local/bin/mise exec node@$(cat .node-version | tr -d ' \n\r') -- sh -c "curl -fsSL https://code-server.dev/install.sh | sh -s -- --method standalone --prefix=/usr/local"
+
+# Workspace owned by candidate; terminal runs as candidate via settings.json profile
+# .bashrc in /home/candidate (not in workspace) so it is hidden from file explorer
+RUN useradd -r -s /bin/bash -d /home/candidate -m candidate && \
+    mkdir -p /home/candidate/workspace && \
+    chown -R candidate:candidate /home/candidate
+
+# Candidate runtimes via mise. Tools activated in user shell via mise use --global and eval "$(mise activate bash)" in .bashrc.
+ARG MISE_CANDIDATE_TOOLS=python@3.12
+RUN sh -c 'export HOME=/home/candidate && curl -fsSL https://mise.run | sh' && \
+    MISE_CANDIDATE_TOOLS="$MISE_CANDIDATE_TOOLS" sh -c '\
+      for tool in $(echo "$MISE_CANDIDATE_TOOLS" | tr "," " "); do \
+        HOME=/home/candidate PATH=/home/candidate/.local/bin:$PATH /home/candidate/.local/bin/mise install "$tool" && \
+        HOME=/home/candidate PATH=/home/candidate/.local/bin:$PATH /home/candidate/.local/bin/mise use "$tool" --global; \
+      done; \
+      echo '\''export PATH="$HOME/.local/bin:$PATH"'\'' >> /home/candidate/.bashrc; \
+      echo '\''eval "$(mise activate bash)"'\'' >> /home/candidate/.bashrc \
+    ' && \
+    chown -R candidate:candidate /home/candidate
+
+# Custom cd: restrict to workspace folder only (cannot cd outside /home/candidate/workspace)
+RUN echo 'cd() { \
+  local target="${1:-/home/candidate/workspace}"; \
+  local dir; \
+  if [[ "$target" == /* ]]; then dir=$(realpath -m "$target" 2>/dev/null); \
+  else dir=$(realpath -m "$(pwd)/$target" 2>/dev/null); fi; \
+  if [[ -z "$dir" ]]; then \
+    if [[ "$target" == /* ]]; then echo "cd: restricted to workspace folder" >&2; return 1; fi; \
+    builtin cd "$target" 2>/dev/null || return 1; return; \
+  fi; \
+  if [[ "$dir" == /home/candidate/workspace/* || "$dir" == /home/candidate/workspace ]]; then \
+    builtin cd "$target"; \
+  else echo "cd: restricted to workspace folder" >&2; return 1; fi; \
+}' >> /home/candidate/.bashrc && chown candidate:candidate /home/candidate/.bashrc
+
+# Install extensions as root, place settings and Continue config under candidate
+# code-server --install-extension only accepts marketplace ids or a .vsix path, not a folder — ship the local extension unpacked under extensions/{publisher}.{name}-{version}/ (must match continue-move-to-auxiliary-extension/package.json).
+RUN mkdir -p /home/candidate/.local/share/code-server/User \
+    && mkdir -p /home/candidate/.local/share/code-server/extensions
+COPY code-server-user-settings.json /home/candidate/.local/share/code-server/User/settings.json
+COPY code-server-user-keybindings.json /home/candidate/.local/share/code-server/User/keybindings.json
+COPY .continue /home/candidate/.continue
+COPY continue-move-to-auxiliary-extension /home/candidate/.local/share/code-server/extensions/local.continue-move-to-auxiliary-0.1.0
+RUN /usr/local/bin/code-server --user-data-dir /home/candidate/.local/share/code-server \
+      --install-extension Continue.continue \
+      --install-extension bruno-api-client.bruno
+# Give candidate ownership of everything except the settings file and its parent dirs
+# Root owns the locked dirs — candidate process cannot write, rename, or temp-swap inside them
+RUN chown -R candidate:candidate /home/candidate/.local /home/candidate/.continue \
+    && chmod 444 /home/candidate/.local/share/code-server/User/settings.json \
+    && chmod 444 /home/candidate/.local/share/code-server/User/keybindings.json \
+    && chmod 555 /home/candidate/.local/share/code-server/User \
+    && chown root:root \
+        /home/candidate/.local/share/code-server/User \
+        /home/candidate/.local/share/code-server/User/settings.json \
+        /home/candidate/.local/share/code-server/User/keybindings.json
+
+COPY entrypoint.sh /usr/local/bin/entrypoint.sh
+COPY workspace-sync.sh /root/workspace-sync.sh
+RUN chmod +x /usr/local/bin/entrypoint.sh \
+    && chown root:root /root/workspace-sync.sh \
+    && chmod 700 /root/workspace-sync.sh \
+    && chmod 700 /root
+
+# CONTAINER_HASH env: set by ECS task (workspace_hash) for S3 sync folder name
+ENV CONTAINER_HASH=""
+
+# EXTENSIONS_GALLERY and other code-server env defaults: see entrypoint.sh (passed through to candidate)
+
+# Listens on 80 (matches ECS/gateway); local: docker run -p 8080:80 ...
+EXPOSE 80
+ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
+CMD ["/usr/local/bin/code-server", "--bind-addr", "0.0.0.0:80", "--auth", "none", "--user-data-dir", "/home/candidate/.local/share/code-server", "--", "/home/candidate/workspace"]
