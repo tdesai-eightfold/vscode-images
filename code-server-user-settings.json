@@ -14,5 +14,7 @@
   "terminal.integrated.defaultProfile.linux": "Candidate (workspace)",
   "workbench.activityBar.location": "hidden",
   "workbench.statusBar.visible": false,
-  "editor.lineNumbers": "on"
+  "editor.lineNumbers": "on",
+  "window.commandCenter": false,
+  "workbench.startupEditor": "none"
 }

@@ -80,6 +80,13 @@ RUN chown -R candidate:candidate /home/candidate/.local /home/candidate/.continu
         /home/candidate/.local/share/code-server/User/settings.json \
         /home/candidate/.local/share/code-server/User/keybindings.json
 
+COPY assets/ /tmp/assets/
+RUN media_dir=$(find /usr/local/lib/code-server-*/src/browser/media -maxdepth 0 -type d | head -1) && \
+    for f in favicon.ico favicon.svg favicon-dark-support.svg pwa-icon-192.png pwa-icon-512.png pwa-icon-maskable-192.png pwa-icon-maskable-512.png; do \
+      [ -f "/tmp/assets/$f" ] && cp "/tmp/assets/$f" "$media_dir/$f"; \
+    done && \
+    rm -rf /tmp/assets
+
 COPY entrypoint.sh /usr/local/bin/entrypoint.sh
 COPY workspace-sync.sh /root/workspace-sync.sh
 RUN chmod +x /usr/local/bin/entrypoint.sh \
