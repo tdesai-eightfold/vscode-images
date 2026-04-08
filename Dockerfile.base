@@ -92,7 +92,7 @@ ENV CONTAINER_HASH=""
 
 # EXTENSIONS_GALLERY and other code-server env defaults: see entrypoint.sh (passed through to candidate)
 
-# Listens on 80 (matches ECS/gateway); local: docker run -p 8080:80 ...
-EXPOSE 80
+# Listens on 8080 (non-privileged; candidate user cannot bind <1024); local: docker run -p 8080:8080 ...
+EXPOSE 8080
 ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
-CMD ["/usr/local/bin/code-server", "--bind-addr", "0.0.0.0:80", "--auth", "none", "--user-data-dir", "/home/candidate/.local/share/code-server", "--", "/home/candidate/workspace"]
+CMD ["/usr/local/bin/code-server", "--bind-addr", "0.0.0.0:8080", "--auth", "none", "--user-data-dir", "/home/candidate/.local/share/code-server", "--", "/home/candidate/workspace"]
