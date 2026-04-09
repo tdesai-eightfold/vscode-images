@@ -22,7 +22,9 @@ RUN curl -fsSL https://raw.githubusercontent.com/coder/code-server/refs/heads/ma
     curl -fsSL https://mise.run | sh && \
     export PATH="/root/.local/bin:${PATH}" && \
     /root/.local/bin/mise install node@$(cat .node-version | tr -d ' \n\r') && \
-    /root/.local/bin/mise exec node@$(cat .node-version | tr -d ' \n\r') -- sh -c "curl -fsSL https://code-server.dev/install.sh | sh -s -- --method standalone --prefix=/usr/local"
+    /root/.local/bin/mise exec node@$(cat .node-version | tr -d ' \n\r') -- sh -c "curl -fsSL https://code-server.dev/install.sh | sh -s -- --method standalone --prefix=/usr/local" && \
+    rm -rf /root/.local /root/.cache /root/.config /.angry_newton
+WORKDIR /
 
 # Workspace owned by candidate; terminal runs as candidate via settings.json profile
 # .bashrc in /home/candidate (not in workspace) so it is hidden from file explorer
@@ -68,7 +70,8 @@ COPY .continue /home/candidate/.continue
 COPY continue-move-to-auxiliary-extension /home/candidate/.local/share/code-server/extensions/local.continue-move-to-auxiliary-0.1.0
 RUN /usr/local/bin/code-server --user-data-dir /home/candidate/.local/share/code-server \
       --install-extension Continue.continue \
-      --install-extension bruno-api-client.bruno
+    && rm -rf /home/candidate/.local/share/code-server/CachedExtensionVSIXs \
+        /root/.cache /root/.config
 # Give candidate ownership of everything except the settings file and its parent dirs
 # Root owns the locked dirs — candidate process cannot write, rename, or temp-swap inside them
 RUN chown -R candidate:candidate /home/candidate/.local /home/candidate/.continue \
