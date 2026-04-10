@@ -1,7 +1,10 @@
 #!/bin/sh
 # Sync workspace folder to S3 every 30 seconds.
 # Uses S3 Access Grants credentials (AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, AWS_SESSION_TOKEN)
-# injected by creator for candidate-code/{group_id}/hash-{CONTAINER_HASH}/ via S3_WORKSPACE_PREFIX (3hr token).
+# injected by creator for candidate-code/hash-{GROUP_ID}/{CONTAINER_HASH}/ via S3_WORKSPACE_PREFIX (3hr token).
+#
+# S3_WORKSPACE_PREFIX is set to "candidate-code/hash-{group_id}" by the creator so this
+# script syncs to s3://{bucket}/{S3_WORKSPACE_PREFIX}/{CONTAINER_HASH}/
 #
 # Test on Mac: WORKSPACE_SRC=/path/to/folder WORKSPACE_SYNC_ONCE=1 CONTAINER_HASH=test123 \
 #   AWS_ACCESS_KEY_ID=... AWS_SECRET_ACCESS_KEY=... AWS_SESSION_TOKEN=... ./workspace-sync.sh
@@ -18,7 +21,8 @@ fi
 INTERVAL="${WORKSPACE_SYNC_INTERVAL:-30}"
 SRC="${WORKSPACE_SRC:-/home/candidate/workspace}"
 BUCKET="${S3_WORKSPACE_BUCKET:-candidate-code-688567298444-ap-northeast-1-an}"
-PREFIX="${S3_WORKSPACE_PREFIX:-candidate-code}"
+GROUP_ID="${GROUP_ID:-eightfold-demo}"
+PREFIX="${S3_WORKSPACE_PREFIX:-candidate-code/hash-${GROUP_ID}}"
 REGION="${AWS_REGION:-ap-northeast-1}"
 ONCE="${WORKSPACE_SYNC_ONCE:-0}"
 
@@ -27,7 +31,7 @@ export RCLONE_CONFIG_WORKSPACE_PROVIDER=AWS
 export RCLONE_CONFIG_WORKSPACE_ENV_AUTH=true
 export RCLONE_CONFIG_WORKSPACE_REGION="$REGION"
 export RCLONE_CONFIG_WORKSPACE_BUCKET="$BUCKET"
-REMOTE="workspace:${BUCKET}/${PREFIX}/hash-${CONTAINER_HASH}/"
+REMOTE="workspace:${BUCKET}/${PREFIX}/${CONTAINER_HASH}/"
 
 if [ ! -d "$SRC" ]; then
   echo "Source directory $SRC does not exist; skipping workspace sync" >&2
