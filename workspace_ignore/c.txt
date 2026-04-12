@@ -1,0 +1,61 @@
+# C — exclude (github/gitignore C.gitignore)
+# https://github.com/github/gitignore/blob/main/C.gitignore
+
+# Prerequisites
+- **/*.d
+
+# Object files
+- **/*.o
+- **/*.ko
+- **/*.obj
+- **/*.elf
+
+# Linker output
+- **/*.ilk
+- **/*.map
+- **/*.exp
+
+# Precompiled headers
+- **/*.gch
+- **/*.pch
+
+# Libraries
+- **/*.lib
+- **/*.a
+- **/*.la
+- **/*.lo
+
+# Shared objects (incl. Windows DLLs)
+- **/*.dll
+- **/*.so
+- **/*.so.*
+- **/*.dylib
+
+# Executables
+- **/*.exe
+- **/*.out
+- **/*.app/**
+- **/*.i386
+- **/*.i486
+- **/*.i586
+- **/*.i686
+- **/*.x86_64
+- **/*.hex
+
+# Debug files
+- **/*.dSYM/**
+- **/*.su
+- **/*.idb
+- **/*.pdb
+
+# Kernel module compile results
+- **/*.mod*
+- **/*.cmd
+- **/.tmp_versions/**
+- **/modules.order
+- **/Module.symvers
+- **/Mkfile.old
+- **/dkms.conf
+
+# Debug information (GCC)
+- **/*.dwo

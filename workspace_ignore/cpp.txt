@@ -1,0 +1,67 @@
+# C++ — exclude (github/gitignore C++.gitignore)
+# https://github.com/github/gitignore/blob/main/C%2B%2B.gitignore
+
+# Prerequisites
+- **/*.d
+
+# Compiled object files
+- **/*.slo
+- **/*.lo
+- **/*.o
+- **/*.obj
+
+# Precompiled headers
+- **/*.gch
+- **/*.pch
+
+# Linker / debugger (overlap with common.txt is ok)
+- **/*.ilk
+- **/*.pdb
+
+# Compiled dynamic libraries
+- **/*.so
+- **/*.dylib
+- **/*.dll
+- **/*.so.*
+
+# Fortran module files
+- **/*.mod
+- **/*.smod
+
+# Compiled static libraries
+- **/*.lai
+- **/*.la
+- **/*.a
+- **/*.lib
+
+# Executables
+- **/*.exe
+- **/*.out
+- **/*.app/**
+
+# Build directories
+- **/build/**
+- **/Build/**
+- **/build-*/**
+
+# CMake generated
+- **/CMakeFiles/**
+- **/CMakeCache.txt
+- **/cmake_install.cmake
+- **/install_manifest.txt
+- **/compile_commands.json
+
+# Temporary / editor swap (upstream lists Makefile; omitted so committed Makefiles still sync)
+- **/*.tmp
+- **/*.bak
+- **/*.swp
+
+# vcpkg
+- **/vcpkg_installed/**
+
+# Debug information (GCC)
+- **/*.dwo
+
+# CTest output & cache
+- **/Testing/**
+- **/.cache/**

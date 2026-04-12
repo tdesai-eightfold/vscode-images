@@ -1,0 +1,4 @@
+# Rust — exclude (github/gitignore Rust.gitignore)
+- **/target/**
+- **/*.rs.bk
+- **/*.pdb

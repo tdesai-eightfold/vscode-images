@@ -1,0 +1,85 @@
+# VCS and OS junk. Ref: https://github.com/github/gitignore
+- **/.git/**
+- **/.svn/**
+- **/.hg/**
+- **/.DS_Store
+- **/Thumbs.db
+
+# Native executables, objects, debug symbols
+- **/*.exe
+- **/*.dll
+- **/*.msi
+- **/*.sys
+- **/*.so
+- **/*.so.*
+- **/*.dylib
+- **/*.bundle
+- **/*.o
+- **/*.obj
+- **/*.a
+- **/*.lib
+- **/*.bin
+- **/*.pdb
+- **/*.ilk
+- **/*.exp
+- **/*.map
+
+# JVM / bytecode
+- **/*.class
+- **/*.jar
+- **/*.war
+- **/*.ear
+- **/*.nar
+- **/*.jmod
+
+# Archives and disk images (large blobs)
+- **/*.zip
+- **/*.7z
+- **/*.rar
+- **/*.gz
+- **/*.bz2
+- **/*.xz
+- **/*.lz4
+- **/*.zst
+- **/*.tar
+- **/*.tgz
+- **/*.tbz2
+- **/*.txz
+- **/*.dmg
+- **/*.iso
+- **/*.img
+
+# Media (binary assets)
+- **/*.png
+- **/*.jpg
+- **/*.jpeg
+- **/*.gif
+- **/*.webp
+- **/*.bmp
+- **/*.tiff
+- **/*.tif
+- **/*.ico
+- **/*.heic
+- **/*.avif
+- **/*.mp4
+- **/*.mov
+- **/*.avi
+- **/*.mkv
+- **/*.webm
+- **/*.mp3
+- **/*.wav
+- **/*.flac
+- **/*.m4a
+- **/*.aac
+- **/*.ogg
+
+# Fonts
+- **/*.woff
+- **/*.woff2
+- **/*.ttf
+- **/*.otf
+- **/*.eot
+
+# SQLite DB files (binary)
+- **/*.sqlite
+- **/*.sqlite3

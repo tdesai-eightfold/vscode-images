@@ -92,6 +92,7 @@ RUN media_dir=$(find /usr/local/lib/code-server-*/src/browser/media -maxdepth 0 
 
 COPY entrypoint.sh /usr/local/bin/entrypoint.sh
 COPY workspace-sync.sh /root/workspace-sync.sh
+COPY workspace_ignore/ /root/workspace_ignore/
 RUN chmod +x /usr/local/bin/entrypoint.sh \
     && chown root:root /root/workspace-sync.sh \
     && chmod 700 /root/workspace-sync.sh \
