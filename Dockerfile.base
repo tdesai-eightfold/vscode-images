@@ -70,6 +70,7 @@ COPY .continue /home/candidate/.continue
 COPY continue-move-to-auxiliary-extension /home/candidate/.local/share/code-server/extensions/local.continue-move-to-auxiliary-0.1.0
 RUN /usr/local/bin/code-server --user-data-dir /home/candidate/.local/share/code-server \
       --install-extension Continue.continue \
+      --install-extension pomdtr.excalidraw-editor \
     && rm -rf /home/candidate/.local/share/code-server/CachedExtensionVSIXs \
         /root/.cache /root/.config
 # Give candidate ownership of everything except the settings file and its parent dirs
