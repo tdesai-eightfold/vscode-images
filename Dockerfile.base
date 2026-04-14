@@ -94,6 +94,12 @@ RUN media_dir=$(find /usr/local/lib/code-server-*/src/browser/media -maxdepth 0 
     for f in favicon.ico favicon.svg favicon-dark-support.svg pwa-icon-192.png pwa-icon-512.png pwa-icon-maskable-192.png pwa-icon-maskable-512.png; do \
       [ -f "/tmp/assets/$f" ] && cp "/tmp/assets/$f" "$media_dir/$f"; \
     done && \
+    out_media_dir=$(find /usr/local/lib/code-server-*/lib/vscode/out/media -maxdepth 0 -type d 2>/dev/null | head -1) && \
+    if [ -n "$out_media_dir" ]; then \
+      for f in letterpress-hcDark.png letterpress-dark.png; do \
+        [ -f "/tmp/assets/$f" ] && cp "/tmp/assets/$f" "$out_media_dir/$f"; \
+      done; \
+    fi && \
     rm -rf /tmp/assets
 
 COPY entrypoint.sh /usr/local/bin/entrypoint.sh
