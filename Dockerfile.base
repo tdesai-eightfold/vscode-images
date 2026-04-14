@@ -96,7 +96,7 @@ RUN media_dir=$(find /usr/local/lib/code-server-*/src/browser/media -maxdepth 0 
     done && \
     out_media_dir=$(find /usr/local/lib/code-server-*/lib/vscode/out/media -maxdepth 0 -type d 2>/dev/null | head -1) && \
     if [ -n "$out_media_dir" ]; then \
-      for f in letterpress-hcDark.png letterpress-dark.png; do \
+      for f in letterpress-hcDark.png letterpress-dark.png letterpress-hcDark.svg letterpress-dark.svg; do \
         [ -f "/tmp/assets/$f" ] && cp "/tmp/assets/$f" "$out_media_dir/$f"; \
       done; \
     fi && \
