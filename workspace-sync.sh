@@ -9,6 +9,8 @@
 # Test on Mac: WORKSPACE_SRC=/path/to/folder WORKSPACE_SYNC_ONCE=1 CONTAINER_HASH=test123 \
 #   AWS_ACCESS_KEY_ID=... AWS_SECRET_ACCESS_KEY=... AWS_SESSION_TOKEN=... ./workspace-sync.sh
 #
+# WORKSPACE_SYNC_RCLONE_VERBOSE=1 — add rclone -vv (very verbose) for CloudWatch/debug; default is quieter.
+#
 # Rclone --filter-from: https://rclone.org/filtering/ — blacklist-only (- rules); paths that
 # match no rule are still transferred. All *.txt files under workspace_ignore/ are merged (LC_ALL=C sort).
 set -e
@@ -28,6 +30,7 @@ GROUP_ID="${GROUP_ID:-eightfold-demo}"
 PREFIX="${S3_WORKSPACE_PREFIX:-candidate-code/hash-${GROUP_ID}}"
 REGION="${AWS_REGION:-ap-northeast-1}"
 ONCE="${WORKSPACE_SYNC_ONCE:-0}"
+WORKSPACE_SYNC_RCLONE_VERBOSE="${WORKSPACE_SYNC_RCLONE_VERBOSE:-0}"
 
 export RCLONE_CONFIG_WORKSPACE_TYPE=s3
 export RCLONE_CONFIG_WORKSPACE_PROVIDER=AWS
@@ -85,10 +88,18 @@ trap 'rm -f "$FILTER_FROM_FILE"' EXIT INT HUP
 ) > "$FILTER_FROM_FILE"
 
 _do_sync() {
+  RCLONE_EXTRA=""
+  RCLONE_LOG="--log-level ERROR"
+  if [ "$WORKSPACE_SYNC_RCLONE_VERBOSE" = "1" ]; then
+    RCLONE_EXTRA="-vv"
+    RCLONE_LOG=""
+  fi
+  # Do not hide stderr: AWS/S3 errors must appear in logs (e.g. expired session token).
   if rclone sync "$SRC" "$REMOTE" \
     --filter-from "$FILTER_FROM_FILE" \
     --s3-upload-concurrency 4 \
-    --log-level ERROR 2>/dev/null; then
+    $RCLONE_EXTRA \
+    $RCLONE_LOG; then
     : # success
   else
     echo "rclone sync failed (will retry)" >&2
