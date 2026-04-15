@@ -1,5 +1,6 @@
 #!/bin/sh
-# Sync workspace folder to S3 every 30 seconds.
+# Sync workspace folder to S3 every 30 seconds, and Continue IDE sessions to
+# {REMOTE}.private/sessions/ on the same interval (local: /home/candidate/.continue/sessions).
 # Uses S3 Access Grants credentials (AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, AWS_SESSION_TOKEN)
 # injected by creator for candidate-code/hash-{GROUP_ID}/{CONTAINER_HASH}/ via S3_WORKSPACE_PREFIX (3hr token).
 #
@@ -38,6 +39,9 @@ export RCLONE_CONFIG_WORKSPACE_ENV_AUTH=true
 export RCLONE_CONFIG_WORKSPACE_REGION="$REGION"
 export RCLONE_CONFIG_WORKSPACE_BUCKET="$BUCKET"
 REMOTE="workspace:${BUCKET}/${PREFIX}/${CONTAINER_HASH}/"
+# Continue session history → REMOTE.private/sessions/ (override with CONTINUE_SESSIONS_SRC)
+SRC_SESSIONS="${CONTINUE_SESSIONS_SRC:-/home/candidate/.continue/sessions}"
+REMOTE_SESSIONS="${REMOTE}.private/sessions/"
 
 if [ ! -d "$SRC" ]; then
   echo "Source directory $SRC does not exist; skipping workspace sync" >&2
@@ -45,6 +49,7 @@ if [ ! -d "$SRC" ]; then
 fi
 
 echo "Workspace sync: $SRC -> $REMOTE (every ${INTERVAL}s)"
+echo "Continue sessions sync: $SRC_SESSIONS -> $REMOTE_SESSIONS (every ${INTERVAL}s, skipped if missing)"
 
 _workspace_sync_rules_dir() {
   if [ -n "${WORKSPACE_SYNC_RULES_DIR:-}" ]; then
@@ -87,13 +92,17 @@ trap 'rm -f "$FILTER_FROM_FILE"' EXIT INT HUP
   done
 ) > "$FILTER_FROM_FILE"
 
-_do_sync() {
+_rclone_verbose_flags() {
   RCLONE_EXTRA=""
   RCLONE_LOG="--log-level ERROR"
   if [ "$WORKSPACE_SYNC_RCLONE_VERBOSE" = "1" ]; then
     RCLONE_EXTRA="-vv"
     RCLONE_LOG=""
   fi
+}
+
+_do_sync() {
+  _rclone_verbose_flags
   # Do not hide stderr: AWS/S3 errors must appear in logs (e.g. expired session token).
   if rclone sync "$SRC" "$REMOTE" \
     --filter-from "$FILTER_FROM_FILE" \
@@ -106,11 +115,36 @@ _do_sync() {
     return 1
   fi
 }
+
+# No workspace_ignore filters; optional path (skip until Continue creates it).
+_do_sync_sessions() {
+  _rclone_verbose_flags
+  if [ ! -d "$SRC_SESSIONS" ]; then
+    return 0
+  fi
+  if rclone sync "$SRC_SESSIONS" "$REMOTE_SESSIONS" \
+    --s3-upload-concurrency 4 \
+    $RCLONE_EXTRA \
+    $RCLONE_LOG; then
+    : # success
+  else
+    echo "rclone sync (Continue sessions) failed (will retry)" >&2
+    return 1
+  fi
+}
+
+_run_sync_round() {
+  _do_sync || true
+  _do_sync_sessions || true
+}
+
 if [ "$ONCE" = "1" ]; then
   _do_sync
-  exit $?
+  _workspace_sync_status=$?
+  _do_sync_sessions || true
+  exit "$_workspace_sync_status"
 fi
 while true; do
-  _do_sync || true
+  _run_sync_round
   sleep "$INTERVAL"
 done
