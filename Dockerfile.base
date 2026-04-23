@@ -102,6 +102,10 @@ RUN media_dir=$(find /usr/local/lib/code-server-*/src/browser/media -maxdepth 0 
     fi && \
     rm -rf /tmp/assets
 
+# Root shell: activate candidate's mise tools so terminal has python/node/etc.
+RUN echo 'export PATH="/home/candidate/.local/bin:$PATH"' >> /root/.bashrc && \
+    echo 'eval "$(HOME=/home/candidate /home/candidate/.local/bin/mise activate bash)"' >> /root/.bashrc
+
 COPY entrypoint.sh /usr/local/bin/entrypoint.sh
 COPY workspace-sync.sh /root/workspace-sync.sh
 COPY workspace_ignore/ /root/workspace_ignore/
