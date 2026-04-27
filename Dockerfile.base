@@ -7,6 +7,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     acl \
     ca-certificates \
     curl \
+    g++ \
     git \
     openssh-client \
     util-linux \
@@ -38,6 +39,7 @@ RUN useradd -r -s /bin/bash -d /home/candidate -m candidate && \
 ARG MISE_CANDIDATE_TOOLS=python@3.12
 RUN sh -c 'export HOME=/home/candidate && curl -fsSL https://mise.run | sh' && \
     MISE_CANDIDATE_TOOLS="$MISE_CANDIDATE_TOOLS" sh -c '\
+      echo "$MISE_CANDIDATE_TOOLS" | tr -d "\n\r" | tr "," " " > /home/candidate/.mise-default-tools; \
       for tool in $(echo "$MISE_CANDIDATE_TOOLS" | tr "," " "); do \
         HOME=/home/candidate PATH=/home/candidate/.local/bin:$PATH /home/candidate/.local/bin/mise install "$tool" && \
         HOME=/home/candidate PATH=/home/candidate/.local/bin:$PATH /home/candidate/.local/bin/mise use "$tool" --global; \
@@ -102,14 +104,12 @@ RUN media_dir=$(find /usr/local/lib/code-server-*/src/browser/media -maxdepth 0 
     fi && \
     rm -rf /tmp/assets
 
-# Root shell: activate candidate's mise tools so terminal has python/node/etc.
-RUN echo 'export PATH="/home/candidate/.local/bin:$PATH"' >> /root/.bashrc && \
-    echo 'eval "$(HOME=/home/candidate /home/candidate/.local/bin/mise activate bash)"' >> /root/.bashrc
-
 COPY entrypoint.sh /usr/local/bin/entrypoint.sh
+COPY candidate-mise-shell /usr/local/bin/candidate-mise-shell
 COPY workspace-sync.sh /root/workspace-sync.sh
 COPY workspace_ignore/ /root/workspace_ignore/
 RUN chmod +x /usr/local/bin/entrypoint.sh \
+    && chmod +x /usr/local/bin/candidate-mise-shell \
     && chown root:root /root/workspace-sync.sh \
     && chmod 700 /root/workspace-sync.sh \
     && chmod 700 /root

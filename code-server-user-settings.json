@@ -1,17 +1,16 @@
 {
   "chat.disableAIFeatures": true,
   "terminal.integrated.profiles.linux": {
-    "Root (workspace)": {
-      "path": "/bin/bash",
-      "args": ["-l", "-i"],
+    "Candidate (workspace)": {
+      "path": "/usr/local/bin/candidate-mise-shell",
       "cwd": "${workspaceFolder}",
       "env": {
-        "HOME": "/root",
-        "PATH": "/home/candidate/.local/bin:/root/.local/bin:/usr/local/bin:/usr/bin:/bin"
+        "HOME": "/home/candidate",
+        "PATH": "/home/candidate/.local/bin:/usr/local/bin:/usr/bin:/bin"
       }
     }
   },
-  "terminal.integrated.defaultProfile.linux": "Root (workspace)",
+  "terminal.integrated.defaultProfile.linux": "Candidate (workspace)",
   "workbench.activityBar.location": "hidden",
   "workbench.statusBar.visible": false,
   "editor.lineNumbers": "on",

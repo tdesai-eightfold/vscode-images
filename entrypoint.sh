@@ -10,14 +10,14 @@ setfacl -R -d -m u:candidate:rwx /home/candidate/workspace 2>/dev/null || true
 # Remove credentials from this process so code-server and terminal never see them
 unset AWS_ACCESS_KEY_ID AWS_SECRET_ACCESS_KEY AWS_SESSION_TOKEN
 
-# Code-server runs under runuser; root env is not forwarded by default. Pass gallery JSON explicitly.
+# Drop to candidate; root env is not forwarded by default, so pass gallery JSON explicitly.
 # Do not use ${VAR:=...} with JSON: the first "}" in the default truncates POSIX parameter expansion.
 EXTENSIONS_GALLERY_DEFAULT='{"serviceUrl":"","itemUrl":"","controlUrl":"","recommendationsUrl":""}'
 EXTENSIONS_GALLERY="${EXTENSIONS_GALLERY:-$EXTENSIONS_GALLERY_DEFAULT}"
 CS_DISABLE_PROXY="${CS_DISABLE_PROXY:-}"
 CS_DISABLE_GETTING_STARTED_OVERRIDE="${CS_DISABLE_GETTING_STARTED_OVERRIDE:-}"
 
-exec /usr/bin/env \
+exec runuser -u candidate -- /usr/bin/env \
   EXTENSIONS_GALLERY="$EXTENSIONS_GALLERY" \
   CS_DISABLE_PROXY="$CS_DISABLE_PROXY" \
   CS_DISABLE_GETTING_STARTED_OVERRIDE="$CS_DISABLE_GETTING_STARTED_OVERRIDE" \

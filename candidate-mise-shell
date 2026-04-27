@@ -3,8 +3,15 @@
 # Tools list is read from /home/candidate/.mise-default-tools (written at image build time).
 TOOLS_FILE="/home/candidate/.mise-default-tools"
 if [ -s "$TOOLS_FILE" ]; then
-  TOOLS="$(cat "$TOOLS_FILE" | tr -d '\n\r')"
-  exec /usr/sbin/runuser -u candidate -- /bin/bash -c "export PATH=/home/candidate/.local/bin:\$PATH; exec /home/candidate/.local/bin/mise exec $TOOLS -- /bin/bash -i" _
+  TOOLS="$(cat "$TOOLS_FILE" | tr -d '\n\r' | tr ',' ' ')"
+  SHELL_CMD="export PATH=/home/candidate/.local/bin:\$PATH; exec /home/candidate/.local/bin/mise exec $TOOLS -- /bin/bash -i"
 else
-  exec /usr/sbin/runuser -u candidate -- /bin/bash -i
+  SHELL_CMD="exec /bin/bash -i"
+fi
+
+# runuser requires root. If already running as candidate, launch shell directly.
+if [ "$(id -u)" -eq 0 ]; then
+  exec /usr/sbin/runuser -u candidate -- /bin/bash -c "$SHELL_CMD" _
+else
+  exec /bin/bash -c "$SHELL_CMD"
 fi
