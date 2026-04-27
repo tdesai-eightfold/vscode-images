@@ -2,9 +2,19 @@ name: Local Config
 version: 1.0.0
 schema: v1
 models:
-  - name: wonderful_kepler
+  - name: gpt-5.4-mini
     provider: openai
-    model: gpt-5.4-nano
+    model: gpt-5.4-mini
+    apiBase: http://ec2-34-216-84-147.us-west-2.compute.amazonaws.com:1234/v1
+    apiKey: proxy
+    roles:
+      - chat
+      - edit
+      - apply
+
+  - name: gpt-5.3-codex
+    provider: openai
+    model: gpt-5.3-codex
     apiBase: http://ec2-34-216-84-147.us-west-2.compute.amazonaws.com:1234/v1
     apiKey: proxy
     roles:
