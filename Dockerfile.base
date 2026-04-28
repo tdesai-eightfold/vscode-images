@@ -67,22 +67,32 @@ RUN echo 'cd() { \
   else echo "cd: restricted to workspace folder" >&2; return 1; fi; \
 }' >> /home/candidate/.bashrc && chown candidate:candidate /home/candidate/.bashrc
 
-# Install extensions as root, place settings and Continue config under candidate
-# code-server --install-extension only accepts marketplace ids or a .vsix path, not a folder — ship the local extension unpacked under extensions/{publisher}.{name}-{version}/ (must match continue-move-to-auxiliary-extension/package.json).
+# Install Codex CLI binary (required for VS Code extension to work without OpenAI login)
+RUN ARCH=$(uname -m) && \
+    if [ "$ARCH" = "aarch64" ] || [ "$ARCH" = "arm64" ]; then \
+      CODEX_BINARY="codex-aarch64-unknown-linux-musl"; \
+    else \
+      CODEX_BINARY="codex-x86_64-unknown-linux-musl"; \
+    fi && \
+    curl -sL "https://github.com/openai/codex/releases/latest/download/${CODEX_BINARY}.tar.gz" \
+      | tar -xz -C /usr/local/bin/ && \
+    mv /usr/local/bin/${CODEX_BINARY} /usr/local/bin/codex && \
+    chmod +x /usr/local/bin/codex
+
+# Install extensions as root and place settings under candidate (OpenAI Codex uses marketplace id openai.chatgpt).
 RUN mkdir -p /home/candidate/.local/share/code-server/User \
     && mkdir -p /home/candidate/.local/share/code-server/extensions
 COPY code-server-user-settings.json /home/candidate/.local/share/code-server/User/settings.json
 COPY code-server-user-keybindings.json /home/candidate/.local/share/code-server/User/keybindings.json
-COPY .continue /home/candidate/.continue
-COPY continue-move-to-auxiliary-extension /home/candidate/.local/share/code-server/extensions/local.continue-move-to-auxiliary-0.1.0
+COPY .codex /home/candidate/.codex
 RUN /usr/local/bin/code-server --user-data-dir /home/candidate/.local/share/code-server \
-      --install-extension Continue.continue \
+      --install-extension openai.chatgpt \
       --install-extension pomdtr.excalidraw-editor \
     && rm -rf /home/candidate/.local/share/code-server/CachedExtensionVSIXs \
         /root/.cache /root/.config
 # Give candidate ownership of everything except the settings file and its parent dirs
 # Root owns the locked dirs — candidate process cannot write, rename, or temp-swap inside them
-RUN chown -R candidate:candidate /home/candidate/.local /home/candidate/.continue \
+RUN chown -R candidate:candidate /home/candidate/.local /home/candidate/.codex \
     && chmod 444 /home/candidate/.local/share/code-server/User/settings.json \
     && chmod 444 /home/candidate/.local/share/code-server/User/keybindings.json \
     && chmod 555 /home/candidate/.local/share/code-server/User \

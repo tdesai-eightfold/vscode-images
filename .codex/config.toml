@@ -1,0 +1,12 @@
+model_provider = "Eightfold"
+model = "gpt-5.4-mini"
+model_reasoning_effort = "medium"
+model_catalog_json = "/home/candidate/.codex/models.json"
+
+[model_providers.openrouter]
+name = "Eightfold"
+base_url = "http://ec2-34-216-84-147.us-west-2.compute.amazonaws.com:1234/v1"
+wire_api = "responses"
+
+[projects."/home/candidate/workspace"]
+trust_level = "trusted"

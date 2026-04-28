@@ -15,5 +15,10 @@
   "workbench.statusBar.visible": false,
   "editor.lineNumbers": "on",
   "window.commandCenter": false,
-  "workbench.startupEditor": "none"
+  "workbench.startupEditor": "none",
+  "workbench.auxiliaryActivityBar.visible": false,
+  "workbench.secondarySideBar.visible": false,
+  "chatgpt.sidebar.defaultOpen": false,
+  "workbench.view.alwaysShowHeaderActions": false,
+  "chatgpt.openOnStartup": true
 }

@@ -1,0 +1,48 @@
+{
+  "models": [
+    {
+      "slug": "gpt-5.4-mini",
+      "display_name": "GPT-5.4 Mini",
+      "description": "OpenAI GPT-5.4 Mini",
+      "supported_reasoning_levels": [
+        { "effort": "low", "description": "Fast responses" },
+        { "effort": "medium", "description": "Balanced reasoning" },
+        { "effort": "high", "description": "Deep reasoning" }
+      ],
+      "shell_type": "default",
+      "visibility": "list",
+      "supported_in_api": true,
+      "priority": 2,
+      "base_instructions": "You are an interview coding assistant in an isolated candidate workspace. Prioritize clear guidance, debugging help, and concise explanations; do not claim to have run commands or tests you did not run.",
+      "supports_reasoning_summaries": false,
+      "support_verbosity": false,
+      "truncation_policy": { "mode": "tokens", "limit": 10000 },
+      "supports_parallel_tool_calls": false,
+      "experimental_supported_tools": [],
+      "context_window": 128000,
+      "max_context_window": 128000
+    },
+    {
+      "slug": "gpt-5.3-codex",
+      "display_name": "GPT-5.3 Codex",
+      "description": "OpenAI GPT-5.3 Codex",
+      "supported_reasoning_levels": [
+        { "effort": "low", "description": "Fast responses" },
+        { "effort": "medium", "description": "Balanced reasoning" },
+        { "effort": "high", "description": "Deep reasoning" }
+      ],
+      "shell_type": "default",
+      "visibility": "list",
+      "supported_in_api": true,
+      "priority": 3,
+      "base_instructions": "You are an interview coding assistant in an isolated candidate workspace. Prioritize clear guidance, debugging help, and concise explanations; do not claim to have run commands or tests you did not run.",
+      "supports_reasoning_summaries": false,
+      "support_verbosity": false,
+      "truncation_policy": { "mode": "tokens", "limit": 10000 },
+      "supports_parallel_tool_calls": false,
+      "experimental_supported_tools": [],
+      "context_window": 128000,
+      "max_context_window": 128000
+    }
+  ]
+}

@@ -9,10 +9,10 @@
   },
   {
     "key": "ctrl+alt+c",
-    "command": "continue.focusContinueInput"
+    "command": "chatgpt.openSidebar"
   },
   {
     "key": "cmd+alt+c",
-    "command": "continue.focusContinueInput"
+    "command": "chatgpt.openSidebar"
   }
 ]
