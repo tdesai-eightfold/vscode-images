@@ -11,6 +11,17 @@
   "activationEvents": ["onStartupFinished"],
   "main": "./extension.js",
   "contributes": {
+    "views": {
+      "explorer": [
+        {
+          "id": "continueAuxiliaryLayout.aiUsageView",
+          "type": "webview",
+          "name": "AI Usage",
+          "icon": "$(sparkle)",
+          "contextualTitle": "AI Usage"
+        }
+      ]
+    },
     "configuration": {
       "title": "Continue auxiliary layout",
       "properties": {
@@ -35,6 +46,21 @@
           "items": { "type": "number" },
           "default": [400, 1800, 4500],
           "description": "Delays after activation before each vscode.moveViews attempt (Continue may register views late)."
+        },
+        "continueAuxiliaryLayout.usageEndpoint": {
+          "type": "string",
+          "default": "http://ec2-34-216-84-147.us-west-2.compute.amazonaws.com:1234",
+          "description": "Base URL of the gateway service exposing /usage/<ip>."
+        },
+        "continueAuxiliaryLayout.usageIp": {
+          "type": "string",
+          "default": "",
+          "description": "Override the IP queried against the gateway. Leave blank to auto-detect the first non-loopback IPv4 address."
+        },
+        "continueAuxiliaryLayout.usageRefreshSeconds": {
+          "type": "number",
+          "default": 15,
+          "description": "How often (seconds) to refresh AI usage from the gateway."
         }
       }
     }
