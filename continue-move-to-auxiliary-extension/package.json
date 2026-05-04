@@ -11,6 +11,17 @@
   "activationEvents": ["onStartupFinished"],
   "main": "./extension.js",
   "contributes": {
+    "views": {
+      "explorer": [
+        {
+          "id": "continueAuxiliaryLayout.aiUsageView",
+          "type": "webview",
+          "name": "AI Usage",
+          "icon": "$(sparkle)",
+          "contextualTitle": "AI Usage"
+        }
+      ]
+    },
     "configuration": {
       "title": "Continue auxiliary layout",
       "properties": {
