@@ -4,20 +4,7 @@
 const vscode = require('vscode');
 const http = require('http');
 const https = require('https');
-const os = require('os');
 const { URL } = require('url');
-
-function detectLocalIp() {
-  const interfaces = os.networkInterfaces();
-  for (const name of Object.keys(interfaces)) {
-    for (const info of interfaces[name] || []) {
-      if (info.family === 'IPv4' && !info.internal) {
-        return info.address;
-      }
-    }
-  }
-  return '';
-}
 
 /**
  * @param {string} url
@@ -97,22 +84,16 @@ class AiUsageViewProvider {
     }
     const config = vscode.workspace.getConfiguration('continueAuxiliaryLayout');
     const endpoint = String(config.get('usageEndpoint', '')).replace(/\/+$/, '');
-    const overrideIp = String(config.get('usageIp', '') || '').trim();
-    const ip = overrideIp || detectLocalIp();
 
     if (!endpoint) {
       this.post({ type: 'error', message: 'Usage endpoint not configured.' });
       return;
     }
-    if (!ip) {
-      this.post({ type: 'error', message: 'Could not determine local IP.' });
-      return;
-    }
 
-    const url = `${endpoint}/usage/${encodeURIComponent(ip)}`;
+    const url = `${endpoint}/usage`;
     try {
       const payload = await fetchJson(url);
-      this.post({ type: 'data', payload, ip });
+      this.post({ type: 'data', payload });
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
       this.post({ type: 'error', message: `Failed to load usage: ${message}` });
@@ -241,12 +222,11 @@ function renderHtml() {
       const payload = message.payload || {};
       const limits = payload.limits || {};
       const models = Array.isArray(payload.models) ? payload.models : [];
-      const header = \`<div class="row"><span class="muted">IP</span><span>\${escapeHtml(payload.ip || message.ip || '')}</span></div>\`;
       if (models.length === 0) {
-        content.innerHTML = header + '<div class="status">No usage recorded yet.</div>';
+        content.innerHTML = '<div class="status">No usage recorded yet.</div>';
         return;
       }
-      content.innerHTML = header + models.map((model) => renderModelBlock(model, limits)).join('');
+      content.innerHTML = models.map((model) => renderModelBlock(model, limits)).join('');
     }
   }
 
@@ -279,7 +259,6 @@ function activate(context) {
     vscode.workspace.onDidChangeConfiguration((event) => {
       if (
         event.affectsConfiguration('continueAuxiliaryLayout.usageEndpoint') ||
-        event.affectsConfiguration('continueAuxiliaryLayout.usageIp') ||
         event.affectsConfiguration('continueAuxiliaryLayout.usageRefreshSeconds')
       ) {
         provider.scheduleRefresh();
