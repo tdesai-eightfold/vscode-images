@@ -51,7 +51,16 @@ class AiUsageViewProvider {
     webviewView.webview.html = renderHtml();
 
     webviewView.webview.onDidReceiveMessage((message) => {
-      if (message && message.type === 'refresh') {
+      if (!message) {
+        return;
+      }
+      if (message.type === 'refresh' || message.type === 'ready') {
+        this.refresh();
+      }
+    });
+
+    webviewView.onDidChangeVisibility(() => {
+      if (webviewView.visible) {
         this.refresh();
       }
     });
@@ -114,6 +123,8 @@ function renderHtml() {
     word-break: break-all;
   }
   .muted { opacity: 0.6; }
+  .model-label { color: #000; font-weight: 700; opacity: 1; }
+  .model-name { color: #000; font-weight: 700; }
   .bar {
     width: 100%;
     height: 2px;
@@ -213,7 +224,7 @@ function renderHtml() {
     return \`
       <div class="model-block">
         <div class="section">
-          <div class="row"><span class="muted"><strong>Model</strong></span><span>\${escapeHtml(model.model || 'unknown')}</span></div>
+          <div class="row"><span class="model-label"><strong>Model</strong></span><span class="model-name">\${escapeHtml(model.model || 'unknown')}</span></div>
         </div>
         <div class="section">
           <div class="row"><span class="muted">Input</span><span>\${model.input_tokens.toLocaleString()} / \${inputLimit.toLocaleString()}</span></div>
@@ -245,6 +256,7 @@ function renderHtml() {
   }
 
   window.addEventListener('message', (event) => render(event.data));
+  vscode.postMessage({ type: 'ready' });
 </script>
 </body>
 </html>`;
