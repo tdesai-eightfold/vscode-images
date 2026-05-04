@@ -40,8 +40,6 @@ class AiUsageViewProvider {
   constructor() {
     /** @type {vscode.WebviewView | undefined} */
     this._view = undefined;
-    /** @type {NodeJS.Timeout | undefined} */
-    this._timer = undefined;
   }
 
   /**
@@ -58,24 +56,7 @@ class AiUsageViewProvider {
       }
     });
 
-    webviewView.onDidDispose(() => {
-      if (this._timer) {
-        clearInterval(this._timer);
-        this._timer = undefined;
-      }
-    });
-
     this.refresh();
-    this.scheduleRefresh();
-  }
-
-  scheduleRefresh() {
-    if (this._timer) {
-      clearInterval(this._timer);
-    }
-    const config = vscode.workspace.getConfiguration('continueAuxiliaryLayout');
-    const seconds = Math.max(5, config.get('usageRefreshSeconds', 15));
-    this._timer = setInterval(() => this.refresh(), seconds * 1000);
   }
 
   async refresh() {
@@ -152,16 +133,45 @@ function renderHtml() {
   .section { margin-bottom: 14px; }
   .model-block { margin-bottom: 12px; }
   .status { opacity: 0.6; font-style: italic; }
+  .refresh-bar {
+    margin-top: 12px;
+    display: flex;
+    justify-content: flex-end;
+  }
   button.refresh {
-    background: transparent;
-    color: inherit;
-    border: 1px solid color-mix(in srgb, currentColor 30%, transparent);
-    padding: 2px 8px;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: var(--vscode-button-secondaryBackground, color-mix(in srgb, currentColor 12%, transparent));
+    color: var(--vscode-button-secondaryForeground, inherit);
+    border: 1px solid color-mix(in srgb, currentColor 25%, transparent);
+    border-radius: 4px;
+    padding: 4px 10px;
     cursor: pointer;
     font-size: 11px;
+    font-family: inherit;
+    font-weight: 500;
+    letter-spacing: 0.2px;
+    transition: background 120ms ease, border-color 120ms ease, transform 120ms ease;
   }
   button.refresh:hover {
-    background: color-mix(in srgb, currentColor 10%, transparent);
+    background: var(--vscode-button-secondaryHoverBackground, color-mix(in srgb, currentColor 22%, transparent));
+    border-color: color-mix(in srgb, currentColor 45%, transparent);
+  }
+  button.refresh:active {
+    transform: translateY(1px);
+  }
+  button.refresh:focus-visible {
+    outline: 1px solid var(--vscode-focusBorder, currentColor);
+    outline-offset: 2px;
+  }
+  button.refresh svg {
+    width: 12px;
+    height: 12px;
+    transition: transform 400ms ease;
+  }
+  button.refresh.spinning svg {
+    transform: rotate(360deg);
   }
 </style>
 </head>
@@ -169,14 +179,23 @@ function renderHtml() {
   <div id="content">
     <div class="status">Loading…</div>
   </div>
-  <div style="margin-top: 8px;">
-    <button class="refresh" id="refresh">Refresh</button>
+  <div class="refresh-bar">
+    <button class="refresh" id="refresh" type="button" title="Refresh usage">
+      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M13.5 8a5.5 5.5 0 1 1-1.61-3.89" />
+        <path d="M13.5 2.5v3h-3" />
+      </svg>
+      <span>Refresh</span>
+    </button>
   </div>
 <script>
   const vscode = acquireVsCodeApi();
   const content = document.getElementById('content');
-  document.getElementById('refresh').addEventListener('click', () => {
+  const refreshBtn = document.getElementById('refresh');
+  refreshBtn.addEventListener('click', () => {
     vscode.postMessage({ type: 'refresh' });
+    refreshBtn.classList.add('spinning');
+    setTimeout(() => refreshBtn.classList.remove('spinning'), 400);
   });
 
   function escapeHtml(value) {
@@ -191,15 +210,10 @@ function renderHtml() {
     const outputLimit = (limits && limits.output_tokens) || 0;
     const inputPct = inputLimit > 0 ? Math.min(100, (model.input_tokens / inputLimit) * 100) : 0;
     const outputPct = outputLimit > 0 ? Math.min(100, (model.output_tokens / outputLimit) * 100) : 0;
-    const overallPct = Math.max(inputPct, outputPct);
     return \`
       <div class="model-block">
         <div class="section">
-          <div class="row"><span class="muted">Model</span><span>\${escapeHtml(model.model || 'unknown')}</span></div>
-        </div>
-        <div class="section">
-          <div class="row"><span class="muted">Usage</span><span>\${overallPct.toFixed(1)}%</span></div>
-          <div class="bar"><div class="fill" style="width: \${overallPct}%"></div></div>
+          <div class="row"><span class="muted"><strong>Model</strong></span><span>\${escapeHtml(model.model || 'unknown')}</span></div>
         </div>
         <div class="section">
           <div class="row"><span class="muted">Input</span><span>\${model.input_tokens.toLocaleString()} / \${inputLimit.toLocaleString()}</span></div>
@@ -257,11 +271,7 @@ function activate(context) {
 
   context.subscriptions.push(
     vscode.workspace.onDidChangeConfiguration((event) => {
-      if (
-        event.affectsConfiguration('continueAuxiliaryLayout.usageEndpoint') ||
-        event.affectsConfiguration('continueAuxiliaryLayout.usageRefreshSeconds')
-      ) {
-        provider.scheduleRefresh();
+      if (event.affectsConfiguration('continueAuxiliaryLayout.usageEndpoint')) {
         provider.refresh();
       }
     }),
