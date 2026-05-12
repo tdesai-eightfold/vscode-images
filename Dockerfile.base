@@ -89,7 +89,9 @@ RUN chown -R candidate:candidate /home/candidate/.local /home/candidate/.continu
     && chown root:root \
         /home/candidate/.local/share/code-server/User \
         /home/candidate/.local/share/code-server/User/settings.json \
-        /home/candidate/.local/share/code-server/User/keybindings.json
+        /home/candidate/.local/share/code-server/User/keybindings.json \
+    && chmod 444 /home/candidate/.continue/config.yaml \
+    && chown root:root /home/candidate/.continue/config.yaml
 
 COPY assets/ /tmp/assets/
 RUN media_dir=$(find /usr/local/lib/code-server-*/src/browser/media -maxdepth 0 -type d | head -1) && \
