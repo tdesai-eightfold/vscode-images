@@ -32,6 +32,10 @@ PREFIX="${S3_WORKSPACE_PREFIX:-candidate-code/hash-${GROUP_ID}}"
 REGION="${AWS_REGION:-ap-northeast-1}"
 ONCE="${WORKSPACE_SYNC_ONCE:-0}"
 WORKSPACE_SYNC_RCLONE_VERBOSE="${WORKSPACE_SYNC_RCLONE_VERBOSE:-0}"
+# Container-service endpoint for refreshing expired S3 Access Grants credentials.
+# Hardcoded for now; override with CONTAINER_SERVICE_URL if needed.
+CONTAINER_SERVICE_URL="${CONTAINER_SERVICE_URL:-https://ec2-16-145-84-221.us-west-2.compute.amazonaws.com}"
+PROVIDER_NAME="${PROVIDER_NAME:-aws}"
 
 export RCLONE_CONFIG_WORKSPACE_TYPE=s3
 export RCLONE_CONFIG_WORKSPACE_PROVIDER=AWS
@@ -133,9 +137,61 @@ _do_sync_sessions() {
   fi
 }
 
+_refresh_s3_credentials() {
+  # POST /workspace/refresh-s3-tokens; on success, re-export AWS_* and S3_WORKSPACE_* for the next round.
+  # Uses -k because the EC2 hostname serves a self-signed cert.
+  if [ -z "$CONTAINER_SERVICE_URL" ]; then
+    echo "CONTAINER_SERVICE_URL not set; cannot refresh S3 credentials" >&2
+    return 1
+  fi
+  url="${CONTAINER_SERVICE_URL%/}/workspace/refresh-s3-tokens"
+  payload=$(printf '{"provider":"%s","workspace_hash":"%s","group_id":"%s"}' \
+    "$PROVIDER_NAME" "$CONTAINER_HASH" "$GROUP_ID")
+  echo "Refreshing S3 credentials via $url" >&2
+  response=$(curl -sk -X POST "$url" \
+    -H "Content-Type: application/json" \
+    -d "$payload" \
+    --max-time 15) || {
+    echo "Refresh request failed (curl error)" >&2
+    return 1
+  }
+  # Parse JSON and emit shell-safe `export` lines via python (always present in the image).
+  exports=$(printf '%s' "$response" | python3 -c '
+import json, shlex, sys
+try:
+    body = json.loads(sys.stdin.read())
+except Exception as exc:
+    print(f"echo \"refresh: invalid JSON: {exc}\" >&2; false", end="")
+    sys.exit(0)
+creds = body.get("credentials") or {}
+required = ("AWS_ACCESS_KEY_ID", "AWS_SECRET_ACCESS_KEY", "AWS_SESSION_TOKEN")
+if not all(creds.get(k) for k in required):
+    msg = body.get("detail") or "missing AWS credentials in response"
+    print(f"echo {shlex.quote(f\"refresh failed: {msg}\")} >&2; false", end="")
+    sys.exit(0)
+keys = required + ("S3_WORKSPACE_BUCKET", "S3_WORKSPACE_PREFIX")
+parts = []
+for k in keys:
+    v = creds.get(k)
+    if v:
+        parts.append(f"export {k}={shlex.quote(v)}")
+print("; ".join(parts), end="")
+') || {
+    echo "Refresh response parse failed" >&2
+    return 1
+  }
+  # shellcheck disable=SC2086
+  eval "$exports" || return 1
+  echo "S3 credentials refreshed" >&2
+}
+
 _run_sync_round() {
-  _do_sync || true
-  _do_sync_sessions || true
+  _sync_failed=0
+  _do_sync || _sync_failed=1
+  _do_sync_sessions || _sync_failed=1
+  if [ "$_sync_failed" = "1" ]; then
+    _refresh_s3_credentials || true
+  fi
 }
 
 if [ "$ONCE" = "1" ]; then
