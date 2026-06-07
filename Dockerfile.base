@@ -36,6 +36,10 @@ RUN useradd -r -s /bin/bash -d /home/candidate -m candidate && \
     chown -R candidate:candidate /home/candidate
 
 # Candidate runtimes via mise. Tools activated in user shell via mise use --global and eval "$(mise activate bash)" in .bashrc.
+# Pin versions in build args (avoid *@latest): a newer JDK can break generated
+# Maven/Gradle projects, and start-java pins java@21 / maven@3.9.11 at runtime —
+# keep the java@ build arg on the same major (java@21) to avoid a second download.
+# Example: --build-arg MISE_CANDIDATE_TOOLS=python@3.12,node@latest,java@21,go@latest
 ARG MISE_CANDIDATE_TOOLS=python@3.12
 RUN sh -c 'export HOME=/home/candidate && curl -fsSL https://mise.run | sh' && \
     MISE_CANDIDATE_TOOLS="$MISE_CANDIDATE_TOOLS" sh -c '\
@@ -67,6 +71,13 @@ RUN echo 'cd() { \
   else echo "cd: restricted to workspace folder" >&2; return 1; fi; \
 }' >> /home/candidate/.bashrc && chown candidate:candidate /home/candidate/.bashrc
 
+# start-java helper: hidden dotfile (kept out of the workspace file explorer) sourced from .bashrc.
+# Provides the `start-java` command: pick Maven/Gradle, mise use -g it, scaffold a project, print build/run cmds.
+COPY candidate-start-java.sh /home/candidate/.start-java.sh
+RUN echo 'source /home/candidate/.start-java.sh' >> /home/candidate/.bashrc \
+    && chown candidate:candidate /home/candidate/.start-java.sh /home/candidate/.bashrc \
+    && chmod 644 /home/candidate/.start-java.sh
+
 # Install extensions as root, place settings and Continue config under candidate
 # code-server --install-extension only accepts marketplace ids or a .vsix path, not a folder — ship the local extension unpacked under extensions/{publisher}.{name}-{version}/ (must match continue-move-to-auxiliary-extension/package.json).
 RUN mkdir -p /home/candidate/.local/share/code-server/User \
@@ -76,7 +87,7 @@ COPY code-server-user-keybindings.json /home/candidate/.local/share/code-server/
 COPY .continue /home/candidate/.continue
 COPY continue-move-to-auxiliary-extension /home/candidate/.local/share/code-server/extensions/local.continue-move-to-auxiliary-0.1.0
 RUN /usr/local/bin/code-server --user-data-dir /home/candidate/.local/share/code-server \
-      --install-extension Continue.continue@1.3.37 \
+      --install-extension Continue.continue@1.3.38 \
       --install-extension pomdtr.excalidraw-editor \
     && rm -rf /home/candidate/.local/share/code-server/CachedExtensionVSIXs \
         /root/.cache /root/.config
